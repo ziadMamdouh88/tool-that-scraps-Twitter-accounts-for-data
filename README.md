@@ -1,43 +1,65 @@
-# tool-that-scraps-Twitter-accounts-for-data
-Python code to create a tool that scraps Twitter accounts for data.
-#Imports the Selenium WebDriver, which is essential for automating web browser interaction from Python.
-#By: Used to locate elements within a webpage. In this script, it helps find tweet elements.
-#sleep: Pauses the execution of the script for a specified amount of time, allowing web pages to load.
-#re: Provides regular expression matching operations. It's used to search for the stock symbol within the text of Posts.
-#Keys: in a Selenium script is used to import the Keys
+Twitter Stock Symbol Scraper using Selenium.
+
+This script uses Selenium to automate the process of scraping Twitter for mentions of specific stock symbols
+in tweets from a list of Twitter account URLs. It is designed to be run periodically to track mentions
+of stock symbols over time.
+
+Author:Ziad Mamdouh
+Date: 13/3/2023
+"""
+
+import re
+from time import sleep
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from time import sleep
 from selenium.webdriver.common.keys import Keys
-import re
+from selenium.webdriver.support.ui import WebDriverWait
 
-#This code initializes the Firefox WebDriver using GeckoDriver
-driver = webdriver.Firefox()
-wait = WebDriverWait(driver, 10)
+def initialize_webdriver():
+    """
+    Initializes and returns a Firefox WebDriver.
+    Make sure GeckoDriver is installed and available in the system path.
+    """
+    return webdriver.Firefox()
 
-#Parameters: The function accepts a list of Twitter account URLs (accounts), a stock symbol (ticker), and a time interval in minutes (interval_minutes).
 def scrape_twitter(accounts, ticker, interval_minutes):
+    """
+    Scrapes Twitter accounts for mentions of a specific stock symbol.
+
+    Parameters:
+    - accounts: List of Twitter account URLs to scrape.
+    - ticker: The stock symbol to search for, formatted as "$SYMB".
+    - interval_minutes: The time interval in minutes for scraping sessions.
+
+    Returns:
+    - The number of times the stock symbol was mentioned across the accounts.
+    """
+    driver = initialize_webdriver()
+    wait = WebDriverWait(driver, 10)
     ticker_mentions = 0
     pattern = re.compile(f"\\{ticker}\\b", re.IGNORECASE)
 
-   for account_url in accounts:
+    for account_url in accounts:
         driver.get(account_url)
-        sleep(3)  # Initial sleep for the page to load
-          # Simple scrolling to load more tweets
-          body = driver.find_element(By.CSS_SELECTOR, 'body')
-          for _ in range(3):  # Adjust the range as needed
+        sleep(3)  # Wait for the initial page load.
+
+        # Scroll the page to load more tweets.
+        body = driver.find_element(By.CSS_SELECTOR, 'body')
+        for _ in range(3):  # Adjust the range as needed for deeper scrolling.
             body.send_keys(Keys.PAGE_DOWN)
-            sleep(1)  # Short sleep between scrolls
-      # the xpath link: //a[@role="link" and @dir="ltr"]
-          posts = driver.find_elements(By.XPATH, '//a[@role="link" and @dir="ltr"]')
-          for tweet in posts:
-            if pattern.search(tweet.text):
+            sleep(1)
+
+        # Find all posts with the specified XPath.
+        posts = driver.find_elements(By.XPATH, '//a[@role="link" and @dir="ltr"]')
+        for post in posts:
+            if pattern.search(post.text):
                 ticker_mentions += 1
 
-  return ticker_mentions
+    driver.quit()
+    return ticker_mentions
 
-
+if __name__ == "__main__":
+    # Example usage:
 # Example usage with specific accounts:
 accounts = [
     'https://twitter.com/Mr_Derivatives',
